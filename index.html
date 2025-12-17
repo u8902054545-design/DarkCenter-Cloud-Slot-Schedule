@@ -69,10 +69,24 @@
         .btn-save { padding: 12px; border-radius: 6px; background-color: #0000FF; color: white; width: 100%; font-weight: 600; text-align: center; }
         .btn-save:disabled { background-color: #1A1A1A; color: #555; border: 1px solid #333; }
         .btn-delete { padding: 12px; border-radius: 6px; background-color: #121212; border: 1px solid #0000FF; color: #0000FF; width: 100%; font-weight: 600; text-align: center; margin-top: 12px; }
+
+        /* --- Стили уведомлений --- */
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(0.95); opacity: 0; }
+        }
+        .toast-enter { animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .toast-leave { animation: fadeOut 0.3s ease-out forwards; }
     </style>
 </head>
 
 <body class="min-h-screen relative overflow-x-hidden">
+
+    <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[110] flex flex-col items-center gap-3 w-full max-w-sm pointer-events-none px-4"></div>
 
     <div id="loadingOverlay">
         <svg class="spinner" viewBox="25 25 50 50">
@@ -82,7 +96,7 @@
 
     <header class="fixed top-0 left-0 w-full z-10 bg-primary-dark px-3 py-1 border-b border-surface-dark/50">
         <div class="relative flex justify-center items-center h-10 mb-2 pt-0">
-            <button onclick="history.back()" class="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 rounded-full text-text-light">
+            <button onclick="window.location.href='https://u8902054545-design.github.io/DarkCenter-Cloud-User-Main/'" class="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 rounded-full text-text-light">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                 </svg>
@@ -124,41 +138,56 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwJm1fzRK0KIBNbwl_wI1aOctRL-zKQ7u41Gj-_lYe0JHRjkOA2wGm7GO12OS9fZCdk/exec";
         const AUTH_PAGE_URL = "https://u8902054545-design.github.io/Auth-ITC-Platform/";
         
-        // Иконки
+        // --- КОНФИГ УВЕДОМЛЕНИЙ ---
+        const toastConfig = {
+            success: {
+                text: 'Изменения сохранены',
+                icon: `<svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#3B82F6"/><path d="M8 12L11 15L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+            },
+            error: {
+                text: 'Ошибка при сохранении',
+                icon: `<svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#EF4444"/><path d="M15 9L9 15M9 9L15 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+            }
+        };
+
+        function showToast(type, customText = null) {
+            const container = document.getElementById('toast-container');
+            const data = toastConfig[type];
+            const toast = document.createElement('div');
+            toast.className = `toast-enter bg-white text-gray-900 rounded-xl shadow-2xl flex items-center gap-3 px-4 py-3 pr-8 min-w-[300px] pointer-events-auto cursor-pointer relative border border-gray-100`;
+            toast.innerHTML = `${data.icon}<span class="font-medium text-sm select-none">${customText || data.text}</span>`;
+            container.appendChild(toast);
+
+            const removeToast = () => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-leave');
+                toast.addEventListener('animationend', () => { if (toast.parentElement) toast.remove(); });
+            };
+            toast.addEventListener('click', removeToast);
+            setTimeout(removeToast, 3000);
+        }
+
+        // Иконки календаря
         const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
         const ICON_CLOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
         const ICON_EXCLAMATION = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
         const ICON_CROSS = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
         const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
 
-        // Данные пользователя
         let userEmail = localStorage.getItem('userEmail');
         let authToken = localStorage.getItem('authToken');
 
-        // --- ЛОГИКА АВТОРИЗАЦИИ ---
-        function logout() {
-            localStorage.clear();
-            window.location.href = AUTH_PAGE_URL;
-        }
-
-        // Если данных нет, сразу на выход
-        if (!userEmail || !authToken) {
-            logout();
-        }
+        function logout() { localStorage.clear(); window.location.href = AUTH_PAGE_URL; }
+        if (!userEmail || !authToken) logout();
 
         async function validateAccess() {
             try {
                 const response = await fetch(`${API_URL}?action=check_auth&userEmail=${encodeURIComponent(userEmail)}&authToken=${encodeURIComponent(authToken)}`);
                 const result = await response.json();
-                if (!result.authorized) {
-                    logout();
-                }
-            } catch (e) {
-                console.error("Auth check failed", e);
-            }
+                if (!result.authorized) logout();
+            } catch (e) { console.error("Auth check failed", e); }
         }
 
-        // --- ЛОГИКА ДАННЫХ ---
         const shiftsMap = new Map();
         const today = new Date(); today.setHours(0,0,0,0);
         let isSheetOpen = false;
@@ -168,16 +197,10 @@
         async function loadData(isSilent = false) {
             if (isSilent && isSheetOpen) return;
             if (!isSilent) showLoading(true);
-
             try {
                 const resp = await fetch(`${API_URL}?userEmail=${encodeURIComponent(userEmail)}&authToken=${encodeURIComponent(authToken)}`);
                 const data = await resp.json();
-                
-                if (data.error === "Unauthorized") {
-                    logout();
-                    return;
-                }
-
+                if (data.error === "Unauthorized") { logout(); return; }
                 shiftsMap.clear();
                 if (Array.isArray(data)) {
                     data.forEach(item => {
@@ -196,7 +219,6 @@
             finally { if (!isSilent) showLoading(false); }
         }
 
-        // --- КАЛЕНДАРЬ ---
         function getWeekKey(date) {
             const day = date.getDay();
             const diff = date.getDate() - (day === 0 ? 6 : day - 1);
@@ -216,21 +238,17 @@
             const dayNames = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
             let currentWeek = '';
             let html = '';
-
             for (let i = -30; i <= 30; i++) {
                 const date = new Date(today); date.setDate(today.getDate() + i);
                 const dateKey = date.toDateString();
                 const weekKey = getWeekKey(date);
-
                 if (weekKey !== currentWeek) {
                     currentWeek = weekKey;
                     html += `<div class="text-left text-xl font-bold text-text-light mt-4 mb-2 pl-2">${formatWeekHeader(date)}</div>`;
                 }
-
                 const isToday = date.getTime() === today.getTime();
                 const isPast = date.getTime() < today.getTime();
                 const shift = shiftsMap.get(dateKey);
-
                 html += `
                 <div class="flex items-center space-x-3 p-2 rounded-lg" ${isToday ? 'id="today-marker"' : ''}>
                     <div class="flex flex-col items-center flex-shrink-0 w-12 p-2 rounded-lg ${isToday ? 'bg-accent-blue' : (isPast ? '' : 'hover:bg-surface-dark')}">
@@ -250,34 +268,27 @@
             let icon, bg, txt, clr, op = "";
             const base = "bg-card-bg text-white p-3 rounded-xl shadow-lg flex justify-between items-center flex-grow";
             const sBgMap = { confirmed: 'bg-green-900/30', completed: 'bg-blue-900/30', pending: 'bg-yellow-900/30', unconfirmed: 'bg-red-900/30', canceled: 'bg-red-900/30' };
-            
             if (s.type==='confirmed') { icon=ICON_CHECK; bg="bg-green-500"; txt="Подтверждён"; clr="text-green-400"; }
             else if (s.type==='completed') { icon=ICON_CHECK; bg="bg-blue-status"; txt="Завершён"; clr="text-blue-400"; }
             else if (s.type==='pending') { icon=ICON_CLOCK; bg="bg-page-bg border-2 border-yellow-500"; txt="Ожидает подтверждения"; clr="text-yellow-500"; }
             else if (s.type==='unconfirmed') { icon=ICON_EXCLAMATION; bg="bg-red-600"; txt="Не подтверждён"; clr="text-red-400"; }
             else { icon=ICON_CROSS; bg="bg-red-600"; txt="Отменён"; clr="text-red-400"; op="opacity-70"; }
-
             const sBg = sBgMap[s.type] || "bg-gray-900/30";
             const clickAttr = s.type === 'pending' ? `onclick="openBottomSheetByDate('${new Date(dKey).toISOString()}', true)"` : '';
-
             return `<div ${clickAttr} class="${base} ${op} cursor-pointer"><div class="flex items-center space-x-2"><div class="w-7 h-7 rounded-full ${bg} flex items-center justify-center">${icon}</div><div><span class="inline-block px-1.5 py-0.5 text-xs font-semibold rounded-lg ${sBg} ${clr}">${txt}</span><p class="text-sm sm:text-lg font-bold mt-1">${s.time}</p></div></div><p class="text-lg sm:text-xl font-bold">${s.duration}</p></div>`;
         }
 
-        // --- ИНТЕРФЕЙС ШТОРКИ ---
         let currentState = { date: null, start: null, end: null };
 
         function openBottomSheetByDate(dateIso, isEdit = false) {
             const date = new Date(dateIso);
             currentState.date = date;
             isSheetOpen = true;
-
             document.getElementById('bs-title').textContent = `Интервал на ${new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(date)}`;
             document.getElementById('end-time-wrapper').classList.add('hidden', 'opacity-0');
             document.getElementById('btn-save-interval').disabled = true;
             document.getElementById('btn-delete-interval').classList.toggle('hidden', !isEdit);
-            
             renderStartScroll();
-
             document.getElementById('bs-backdrop').classList.remove('hidden');
             setTimeout(() => document.getElementById('bs-backdrop').classList.remove('opacity-0'), 10);
             document.getElementById('bs-container').classList.remove('translate-y-full');
@@ -338,8 +349,13 @@
                     action: 'save', userEmail, authToken, date: currentState.date.toISOString(),
                     interval: `${s} — ${e}`, duration: `${currentState.end - currentState.start} ч`
                 })});
-                closeBottomSheet(); await loadData();
-            } catch (err) { alert("Ошибка сохранения"); showLoading(false); }
+                closeBottomSheet(); 
+                await loadData();
+                showToast('success'); // Вызов уведомления
+            } catch (err) { 
+                showToast('error'); 
+                showLoading(false); 
+            }
         }
 
         async function deleteInterval() {
@@ -349,24 +365,25 @@
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify({
                     action: 'delete', userEmail, authToken, date: currentState.date.toISOString()
                 })});
-                closeBottomSheet(); await loadData();
-            } catch (err) { alert("Ошибка удаления"); showLoading(false); }
+                closeBottomSheet(); 
+                await loadData();
+                showToast('success'); // Вызов уведомления
+            } catch (err) { 
+                showToast('error', 'Ошибка удаления'); 
+                showLoading(false); 
+            }
         }
 
-        // --- ЗАПУСК И ЦИКЛ ПРОВЕРКИ ---
         window.onload = async () => {
-            await validateAccess(); // Первая проверка
-            await loadData(); // Загрузка данных
-            
+            await validateAccess();
+            await loadData();
             setTimeout(() => {
                 const el = document.getElementById('today-marker');
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 500);
-
-            // Фоновое обновление каждые 3 секунды
             setInterval(async () => {
-                await validateAccess(); // Проверяем статус аккаунта
-                await loadData(true);   // Обновляем расписание в фоне
+                await validateAccess();
+                await loadData(true);
             }, 3000);
         };
     </script>

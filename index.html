@@ -6,6 +6,7 @@
     <title>Расписание смен</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -23,6 +24,9 @@
                         'card-bg': '#1A1A1A',
                         'bs-bg': '#121212',
                         'blue-status': '#0000FF',
+                        /* Переменные для меню */
+                        'menu-surface': '#1E1F20',
+                        'menu-on-surface': '#E3E3E3',
                     },
                     fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
                 }
@@ -34,7 +38,7 @@
         
         body { background-color: #0F0F0F; color: #E0E0E0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* Стили Спинера */
+        /* --- Стили загрузчика --- */
         .spinner { width: 60px; height: 60px; animation: rotate 2s linear infinite; transform-origin: center center; }
         .path { stroke: #0000FF; stroke-linecap: round; stroke-width: 4; stroke-dasharray: 1, 150; animation: dash 1.5s ease-in-out infinite; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
@@ -56,7 +60,6 @@
         .hide-scrollbar::-webkit-scrollbar { height: 0px; background: transparent; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Bottom Sheet */
         .bottom-sheet {
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
@@ -69,53 +72,68 @@
         }
         .time-btn.selected { background-color: #0000FF; border-color: #0000FF; color: white; font-weight: 700; }
 
-        /* --- СТИЛИ НИЖНЕГО МЕНЮ --- */
+        .btn-save { padding: 12px; border-radius: 6px; background-color: #0000FF; color: white; width: 100%; font-weight: 600; text-align: center; }
+        .btn-save:disabled { background-color: #1A1A1A; color: #555; border: 1px solid #333; }
+        .btn-delete { padding: 12px; border-radius: 6px; background-color: #121212; border: 1px solid #0000FF; color: #0000FF; width: 100%; font-weight: 600; text-align: center; margin-top: 12px; }
+
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(0.95); opacity: 0; }
+        }
+        .toast-enter { animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .toast-leave { animation: fadeOut 0.3s ease-out forwards; }
+
+        /* --- STYLES FOR BOTTOM MENU --- */
         .nav-bar {
             position: fixed;
-            bottom: 24px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             width: calc(100% - 32px);
             max-width: 500px;
             height: 70px; 
-            background-color: #1E1F20;
+            background-color: #1E1F20; /* Matches --md-sys-color-surface */
             border-radius: 35px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-            z-index: 50;
+            padding: 0 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            /* z-index должен быть ниже Backdrop (40) и BottomSheet (50), но выше контента */
+            z-index: 30; 
+            box-sizing: border-box;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
-            border-radius: 24px;
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.2s ease;
-            color: #E3E3E3;
+            color: #E3E3E3; /* Matches --md-sys-color-on-surface */
             text-decoration: none;
         }
 
-        .nav-item svg { width: 22px; height: 22px; }
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+        }
 
         .nav-item.active {
             background-color: #0000FF;
             color: #FFFFFF;
         }
         
-        .nav-item:active { transform: scale(0.9); }
-
-        .btn-save { padding: 12px; border-radius: 6px; background-color: #0000FF; color: white; width: 100%; font-weight: 600; text-align: center; }
-        .btn-save:disabled { background-color: #1A1A1A; color: #555; border: 1px solid #333; }
-        .btn-delete { padding: 12px; border-radius: 6px; background-color: #121212; border: 1px solid #0000FF; color: #0000FF; width: 100%; font-weight: 600; text-align: center; margin-top: 12px; }
-
-        @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .toast-enter { animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .nav-item:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 
@@ -131,41 +149,15 @@
 
     <header class="fixed top-0 left-0 w-full z-10 bg-primary-dark px-3 py-1 border-b border-surface-dark/50">
         <div class="relative flex justify-center items-center h-10 mb-2 pt-0">
-            <h1 class="text-lg font-bold text-text-light text-center tracking-wide" style="font-size: 16px;">Расписание</h1>
+            <h1 class="text-lg font-bold text-text-light text-center tracking-wide w-full" style="font-size: 16px;">Расписание</h1>
         </div>
     </header>
 
     <div class="h-14"></div>
 
-    <div class="w-full px-3 pb-32"> 
+    <div class="w-full px-3 pb-28"> 
         <div id="calendar-container" class="space-y-1 pb-4"></div>
     </div>
-
-    <nav class="nav-bar" id="main-nav">
-        <a href="https://u8902054545-design.github.io/DarkCenter-Cloud-User-Main/" class="nav-item">
-            <i data-lucide="home"></i>
-        </a>
-        
-        <a href="https://u8902054545-design.github.io/DarkCenter-Cloud-Slot-Schedule/" class="nav-item active">
-            <i data-lucide="calendar-days"></i>
-        </a>
-
-        <a href="https://u8902054545-design.github.io/cloud-center/" class="nav-item">
-            <i data-lucide="map-pin"></i>
-        </a>
-
-        <a href="https://u8902054545-design.github.io/payments-darkcenter" class="nav-item">
-            <i data-lucide="credit-card"></i>
-        </a>
-
-        <a href="https://u8902054545-design.github.io/education-darkcenter" class="nav-item">
-            <i data-lucide="graduation-cap"></i>
-        </a>
-
-        <a href="https://u8902054545-design.github.io/chats-darkcenter" class="nav-item">
-            <i data-lucide="message-square-more"></i>
-        </a>
-    </nav>
 
     <div id="bs-backdrop" class="fixed inset-0 bg-black/70 z-40 hidden opacity-0 transition-opacity duration-300" onclick="closeBottomSheet()"></div>
     <div id="bs-container" class="fixed bottom-0 left-0 w-full z-50 rounded-t-2xl transform translate-y-full bottom-sheet flex flex-col max-h-[85vh]">
@@ -184,7 +176,7 @@
                 <div id="end-time-scroll" class="flex overflow-x-auto space-x-3 hide-scrollbar pb-2"></div>
             </div>
         </div>
-        <div class="p-5 border-t border-white/10 bg-bs-bg w-full pb-10">
+        <div class="p-5 border-t border-white/10 bg-bs-bg w-full safe-area-bottom">
             <button id="btn-save-interval" class="btn-save" disabled onclick="saveInterval()">Сохранить</button>
             <button id="btn-delete-interval" class="btn-delete hidden" onclick="openDeleteConfirmation()">Удалить интервал</button>
         </div>
@@ -193,21 +185,81 @@
     <div id="confirm-backdrop" class="fixed inset-0 bg-black/70 z-[60] hidden opacity-0 transition-opacity duration-300" onclick="closeDeleteConfirmation()"></div>
     <div id="confirm-container" class="fixed bottom-0 left-0 w-full z-[70] rounded-t-2xl transform translate-y-full bottom-sheet bg-bs-bg p-6">
         <div class="w-full flex justify-center mb-4"><div class="w-12 h-1.5 bg-gray-600 rounded-full"></div></div>
-        <h2 class="text-xl font-bold text-white mb-2">Удалить интервал?</h2>
-        <div class="space-y-3 mt-6">
+        <h2 class="text-xl font-bold text-white mb-2">Удалить интервал доступности?</h2>
+        <p class="text-text-muted mb-8">Интервал доступности будет удалён из расписания</p>
+        <div class="space-y-3">
             <button onclick="confirmDelete()" class="w-full py-4 bg-accent-blue text-white font-bold rounded-xl">Удалить</button>
-            <button onclick="closeDeleteConfirmation()" class="w-full py-4 bg-transparent border border-gray-600 text-white font-bold rounded-xl">Отмена</button>
+            <button onclick="closeDeleteConfirmation()" class="w-full py-4 bg-transparent border border-gray-600 text-white font-bold rounded-xl">Не удалять</button>
         </div>
-        <div class="h-6"></div>
+        <div class="h-4"></div>
     </div>
 
+    <nav class="nav-bar" id="main-nav">
+        <a href="https://u8902054545-design.github.io/DarkCenter-Cloud-User-Main/" class="nav-item">
+            <i data-lucide="home"></i>
+        </a>
+        
+        <a href="https://u8902054545-design.github.io/DarkCenter-Cloud-Slot-Schedule/" class="nav-item active" id="nav-schedule">
+            <i data-lucide="calendar-days"></i>
+        </a>
+
+        <a href="https://u8902054545-design.github.io/cloud-center/" class="nav-item" id="nav-cloud">
+            <i data-lucide="map-pin"></i>
+        </a>
+
+        <a href="https://u8902054545-design.github.io/payments-darkcenter" class="nav-item" id="nav-payments">
+            <i data-lucide="credit-card"></i>
+        </a>
+
+        <a href="https://u8902054545-design.github.io/education-darkcenter" class="nav-item" id="nav-education">
+            <i data-lucide="graduation-cap"></i>
+        </a>
+
+        <a href="https://u8902054545-design.github.io/chats-darkcenter" class="nav-item" id="nav-chats">
+            <i data-lucide="message-square-more"></i>
+        </a>
+    </nav>
+
     <script>
-        // Инициализация иконок меню
+        // Инициализация иконок Lucide
         lucide.createIcons();
 
         const API_URL = "https://script.google.com/macros/s/AKfycbwJm1fzRK0KIBNbwl_wI1aOctRL-zKQ7u41Gj-_lYe0JHRjkOA2wGm7GO12OS9fZCdk/exec";
         const AUTH_PAGE_URL = "https://u8902054545-design.github.io/Auth-ITC-Platform/";
         
+        const toastConfig = {
+            success: {
+                text: 'Изменения сохранены',
+                icon: `<svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#3B82F6"/><path d="M8 12L11 15L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+            },
+            error: {
+                text: 'Ошибка при сохранении',
+                icon: `<svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#EF4444"/><path d="M15 9L9 15M9 9L15 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+            }
+        };
+
+        function showToast(type, customText = null) {
+            const container = document.getElementById('toast-container');
+            const data = toastConfig[type];
+            const toast = document.createElement('div');
+            toast.className = `toast-enter bg-white text-gray-900 rounded-xl shadow-2xl flex items-center gap-3 px-4 py-3 pr-8 min-w-[300px] pointer-events-auto cursor-pointer relative border border-gray-100`;
+            toast.innerHTML = `${data.icon}<span class="font-medium text-sm select-none">${customText || data.text}</span>`;
+            container.appendChild(toast);
+            const removeToast = () => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-leave');
+                toast.addEventListener('animationend', () => { if (toast.parentElement) toast.remove(); });
+            };
+            toast.addEventListener('click', removeToast);
+            setTimeout(removeToast, 3000);
+        }
+
+        const ICON_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        const ICON_CLOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+        const ICON_EXCLAMATION = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+        const ICON_CROSS = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
+
         let userEmail = localStorage.getItem('userEmail');
         let authToken = localStorage.getItem('authToken');
 
@@ -234,6 +286,7 @@
             try {
                 const resp = await fetch(`${API_URL}?userEmail=${encodeURIComponent(userEmail)}&authToken=${encodeURIComponent(authToken)}`);
                 const data = await resp.json();
+                if (data.error === "Unauthorized") { logout(); return; }
                 shiftsMap.clear();
                 if (Array.isArray(data)) {
                     data.forEach(item => {
@@ -266,8 +319,6 @@
             return (df.format(start) + ' — ' + df.format(end)).replace(/^\w/, c => c.toUpperCase());
         }
 
-        const ICON_PLUS = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
-
         function renderCalendar() {
             const container = document.getElementById('calendar-container');
             const dayNames = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
@@ -295,31 +346,75 @@
                     </div>
                 </div>`;
             }
+            html += `<div class="bg-info-surface p-4 rounded-xl mt-6 text-sm text-text-muted border border-surface-dark mb-10"><p><strong class="text-white">Внимание:</strong> Дальше выставить интервалы не получится.</p></div>`;
             container.innerHTML = html;
         }
 
         function getCardHTML(s, dKey) {
-            const ICON_CHECK = `<svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>`;
-            const ICON_CLOCK = `<svg class="w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
-            
-            let icon, bg, txt, clr;
+            let icon, bg, txt, clr, op = "";
+            const base = "bg-card-bg text-white p-3 rounded-xl shadow-lg flex justify-between items-center flex-grow";
+            const sBgMap = { confirmed: 'bg-green-900/30', completed: 'bg-blue-900/30', pending: 'bg-yellow-900/30', unconfirmed: 'bg-red-900/30', canceled: 'bg-red-900/30' };
             if (s.type==='confirmed') { icon=ICON_CHECK; bg="bg-green-500"; txt="Подтверждён"; clr="text-green-400"; }
             else if (s.type==='completed') { icon=ICON_CHECK; bg="bg-blue-status"; txt="Завершён"; clr="text-blue-400"; }
             else if (s.type==='pending') { icon=ICON_CLOCK; bg="bg-page-bg border-2 border-yellow-500"; txt="Ожидает подтверждения"; clr="text-yellow-500"; }
-            else { icon=ICON_CHECK; bg="bg-red-600"; txt="Отменён"; clr="text-red-400"; }
-
+            else if (s.type==='unconfirmed') { icon=ICON_EXCLAMATION; bg="bg-red-600"; txt="Не подтверждён"; clr="text-red-400"; }
+            else { icon=ICON_CROSS; bg="bg-red-600"; txt="Отменён"; clr="text-red-400"; op="opacity-70"; }
+            const sBg = sBgMap[s.type] || "bg-gray-900/30";
+            
+            // Получаем интервал для передачи в функцию открытия
             const clickAttr = s.type === 'pending' ? `onclick="openBottomSheetByDate('${new Date(dKey).toISOString()}', true, '${s.time}')"` : '';
-            return `<div ${clickAttr} class="bg-card-bg text-white p-3 rounded-xl flex justify-between items-center flex-grow cursor-pointer"><div class="flex items-center space-x-2"><div class="w-7 h-7 rounded-full ${bg} flex items-center justify-center">${icon}</div><div><span class="text-xs font-semibold ${clr}">${txt}</span><p class="text-sm font-bold">${s.time}</p></div></div><p class="text-lg font-bold">${s.duration}</p></div>`;
+            return `<div ${clickAttr} class="${base} ${op} cursor-pointer"><div class="flex items-center space-x-2"><div class="w-7 h-7 rounded-full ${bg} flex items-center justify-center">${icon}</div><div><span class="inline-block px-1.5 py-0.5 text-xs font-semibold rounded-lg ${sBg} ${clr}">${txt}</span><p class="text-sm sm:text-lg font-bold mt-1">${s.time}</p></div></div><p class="text-lg sm:text-xl font-bold">${s.duration}</p></div>`;
         }
 
         let currentState = { date: null, start: null, end: null };
 
         function openBottomSheetByDate(dateIso, isEdit = false, existingInterval = null) {
-            currentState.date = new Date(dateIso);
+            const date = new Date(dateIso);
+            currentState.date = date;
             isSheetOpen = true;
-            document.getElementById('bs-title').textContent = `Интервал на ${new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(currentState.date)}`;
+            
+            document.getElementById('bs-title').textContent = `Интервал на ${new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' }).format(date)}`;
+            document.getElementById('end-time-wrapper').classList.add('hidden', 'opacity-0');
+            document.getElementById('btn-save-interval').disabled = true;
             document.getElementById('btn-delete-interval').classList.toggle('hidden', !isEdit);
+            
             renderStartScroll();
+
+            // Если это редактирование "Ожидает подтверждения", парсим время
+            if (isEdit && existingInterval) {
+                try {
+                    const times = existingInterval.split(' — ');
+                    const startH = parseInt(times[0].split(':')[0]);
+                    let endH = parseInt(times[1].split(':')[0]);
+                    if (times[1].includes('+1')) endH += 24;
+
+                    // Выбираем старт
+                    const startBtns = document.querySelectorAll('#start-time-scroll .time-btn');
+                    startBtns.forEach(btn => {
+                        if (parseInt(btn.textContent) === startH) {
+                            currentState.start = startH;
+                            btn.classList.add('selected');
+                            btn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+                        }
+                    });
+
+                    // Рендерим и выбираем конец
+                    renderEndScroll(startH);
+                    const endBtns = document.querySelectorAll('#end-time-scroll .time-btn');
+                    endBtns.forEach(btn => {
+                        let btnH = parseInt(btn.textContent);
+                        if (btn.textContent.includes('+1')) btnH += 24;
+                        
+                        if (btnH === endH) {
+                            currentState.end = endH;
+                            btn.classList.add('selected');
+                            document.getElementById('btn-save-interval').disabled = false;
+                            btn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+                        }
+                    });
+                } catch (e) { console.error("Error parsing interval", e); }
+            }
+
             document.getElementById('bs-backdrop').classList.remove('hidden');
             setTimeout(() => document.getElementById('bs-backdrop').classList.remove('opacity-0'), 10);
             document.getElementById('bs-container').classList.remove('translate-y-full');
@@ -359,8 +454,9 @@
                 };
                 endScroll.appendChild(b);
             }
-            document.getElementById('end-time-wrapper').classList.remove('hidden');
-            setTimeout(()=>document.getElementById('end-time-wrapper').classList.remove('opacity-0'), 50);
+            const w = document.getElementById('end-time-wrapper');
+            w.classList.remove('hidden');
+            setTimeout(()=>w.classList.remove('opacity-0'), 50);
         }
 
         function closeBottomSheet() {
@@ -370,6 +466,7 @@
             setTimeout(() => { document.getElementById('bs-backdrop').classList.add('hidden'); document.body.style.overflow = ''; }, 300);
         }
 
+        // --- ФУНКЦИИ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ ---
         function openDeleteConfirmation() {
             document.getElementById('confirm-backdrop').classList.remove('hidden');
             setTimeout(() => document.getElementById('confirm-backdrop').classList.remove('opacity-0'), 10);
@@ -389,8 +486,13 @@
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify({
                     action: 'delete', userEmail, authToken, date: currentState.date.toISOString()
                 })});
-                closeBottomSheet(); await loadData();
-            } catch (err) { showLoading(false); }
+                closeBottomSheet(); 
+                await loadData();
+                showToast('success', 'Интервал удалён');
+            } catch (err) { 
+                showToast('error', 'Ошибка удаления'); 
+                showLoading(false); 
+            }
         }
 
         async function saveInterval() {
@@ -403,8 +505,13 @@
                     action: 'save', userEmail, authToken, date: currentState.date.toISOString(),
                     interval: `${s} — ${e}${suffix}`, duration: `${currentState.end - currentState.start} ч`
                 })});
-                closeBottomSheet(); await loadData();
-            } catch (err) { showLoading(false); }
+                closeBottomSheet(); 
+                await loadData();
+                showToast('success');
+            } catch (err) { 
+                showToast('error'); 
+                showLoading(false); 
+            }
         }
 
         window.onload = async () => {
@@ -414,7 +521,10 @@
                 const el = document.getElementById('today-marker');
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 500);
-            setInterval(async () => { await loadData(true); }, 5000);
+            setInterval(async () => {
+                await validateAccess();
+                await loadData(true);
+            }, 3000);
         };
     </script>
 </body>
